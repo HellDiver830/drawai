@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SarFTI - Результат</title>
+    <style>
+        body {
+            background: #0d1b2a;
+            color: #e0e1dd;
+            font-family: 'Orbitron', sans-serif;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        h1 {
+            text-align: center;
+            color: #00b4d8;
+            text-shadow: 0 0 10px #00b4d8;
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .result {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .result img, .result video {
+            max-width: 100%;
+            border: 2px solid #90e0ef;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(144, 224, 239, 0.5);
+        }
+        #toy_result {
+            margin-top: 20px;
+        }
+        #toy_message {
+            color: red;
+        }
+        button {
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #00b4d8;
+            border-radius: 5px;
+            background: #00b4d8;
+            color: #0d1b2a;
+            cursor: pointer;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+    </style>
+</head>
+<body>
+    <h1>SarFTI - Результат</h1>
+    <div class="container">
+        <div class="result">
+            <div>
+                <h2>Сгенерированное изображение</h2>
+                <img src="{{ image_url }}" alt="Сгенерированное изображение">
+            </div>
+            <div>
+                <h2>3D-модель</h2>
+                <video controls>
+                    <source src="{{ video_url }}" type="video/mp4">
+                    Ваш браузер не поддерживает видео.
+                </video>
+            </div>
+        </div>
+        <div>
+            <button id="make_toy">Сделать игрушку</button>
+        </div>
+        <div id="toy_result" style="display: none;">
+            <h2>Изображение игрушки</h2>
+            <img id="toy_image" src="" alt="Изображение игрушки">
+            <p id="toy_message"></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('make_toy').addEventListener('click', async () => {
+            const unique_id = window.location.pathname.split('/').pop();
+            try {
+                const response = await fetch(`/make_toy/${unique_id}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                const toyResult = document.getElementById('toy_result');
+                const toyImage = document.getElementById('toy_image');
+                const toyMessage = document.getElementById('toy_message');
+                if (data.toy_url) {
+                    toyImage.src = data.toy_url;
+                    toyMessage.textContent = '';
+                    toyResult.style.display = 'block';
+                } else {
+                    toyMessage.textContent = data.error || 'Неизвестная ошибка';
+                    toyImage.src = '';
+                    toyResult.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                document.getElementById('toy_message').textContent = 'Ошибка связи с сервером';
+                document.getElementById('toy_result').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

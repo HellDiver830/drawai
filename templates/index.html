@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>SarFTI - Рисование и генерация</title>
+    <style>
+        body {
+            background: #0d1b2a;
+            color: #e0e1dd;
+            font-family: 'Orbitron', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #00b4d8;
+            text-shadow: 0 0 10px #00b4d8;
+            font-size: 3em;
+        }
+        canvas {
+            border: 2px solid #00b4d8;
+            background: #1b263b;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 180, 216, 0.5);
+            display: block;
+            margin: 20px auto;
+        }
+        .input-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        input, select, button {
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #00b4d8;
+            border-radius: 5px;
+            background: #1b263b;
+            color: #e0e1dd;
+        }
+        button {
+            background: #00b4d8;
+            color: #0d1b2a;
+            cursor: pointer;
+        }
+        .loader {
+            display: none;
+            text-align: center;
+            font-size: 1.5em;
+            color: #90e0ef;
+            text-shadow: 0 0 10px #90e0ef;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>SarFTI</h1>
+    <canvas id="sketchpad" width="800" height="400"></canvas>
+    <div class="input-group">
+        <input type="text" id="prompt" placeholder="Введите промт">
+        <select id="style">
+            <option value="(No style)">(Без стиля)</option>
+            <option value="Cinematic">Кинематографический</option>
+            <option value="3D Model">3D-модель</option>
+            <option value="Anime">Аниме</option>
+            <option value="Digital Art">Цифровое искусство</option>
+            <option value="Photographic">Фотографический</option>
+            <option value="Pixel art">Пиксельное искусство</option>
+            <option value="Fantasy art">Фэнтези-арт</option>
+            <option value="Neonpunk">Неонпанк</option>
+            <option value="Manga">Манга</option>
+        </select>
+        <button onclick="generate()">Сгенерировать</button>
+    </div>
+    <div id="loader" class="loader">Обработка...</div>
+
+    <script>
+        const canvas = document.getElementById('sketchpad');
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+
+        // Настройка рисования
+        ctx.strokeStyle = '#e0e1dd';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+
+        canvas.addEventListener('mousedown', (e) => {
+            drawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (drawing) {
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            drawing = false;
+        });
+
+        canvas.addEventListener('mouseout', () => {
+            drawing = false;
+        });
+
+        // Функция для отправки данных на сервер
+        async function generate() {
+            const loader = document.getElementById('loader');
+            loader.style.display = 'block';
+
+            // Получаем данные
+            const imageData = canvas.toDataURL('image/png');
+            const prompt = document.getElementById('prompt').value;
+            const style = document.getElementById('style').value;
+
+            // Отладка: проверяем, что отправляем
+            console.log('Отправляемые данные:');
+            console.log('image:', imageData.substring(0, 50) + '...');
+            console.log('prompt:', prompt);
+            console.log('style:', style);
+
+            const jsonData = {
+                image: imageData,
+                prompt: prompt,
+                style: style
+            };
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(jsonData)
+                });
+
+                const data = await response.json();
+                console.log('Ответ от сервера:', data);
+
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    console.error('Ошибка генерации:', data.error);
+                    alert('Ошибка генерации: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                console.error('Ошибка запроса:', error);
+                alert('Ошибка связи с сервером');
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>SarFTI</h1>
+    <canvas id="sketchpad" width="800" height="400"></canvas>
+    <div class="input-group">
+        <input type="text" id="prompt" placeholder="Введите промт">
+        <select id="style">
+            <option value="(No style)">(Без стиля)</option>
+            <option value="Cinematic">Кинематографический</option>
+            <option value="3D Model">3D-модель</option>
+            <option value="Anime">Аниме</option>
+            <option value="Digital Art">Цифровое искусство</option>
+            <option value="Photographic">Фотографический</option>
+            <option value="Pixel art">Пиксельное искусство</option>
+            <option value="Fantasy art">Фэнтези-арт</option>
+            <option value="Neonpunk">Неонпанк</option>
+            <option value="Manga">Манга</option>
+        </select>
+        <button onclick="generate()">Сгенерировать</button>
+    </div>
+    <div id="loader" class="loader">Обработка...</div>
+
+    <script>
+        const canvas = document.getElementById('sketchpad');
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+
+        // Настройка рисования
+        ctx.strokeStyle = '#e0e1dd';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+
+        canvas.addEventListener('mousedown', (e) => {
+            drawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (drawing) {
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            drawing = false;
+        });
+
+        canvas.addEventListener('mouseout', () => {
+            drawing = false;
+        });
+
+        // Функция для отправки данных на сервер
+        async function generate() {
+            const loader = document.getElementById('loader');
+            loader.style.display = 'block';
+
+            // Получаем данные
+            const imageData = canvas.toDataURL('image/png');
+            const prompt = document.getElementById('prompt').value;
+            const style = document.getElementById('style').value;
+
+            // Отладка: проверяем, что отправляем
+            console.log('Отправляемые данные:');
+            console.log('image:', imageData.substring(0, 50) + '...');
+            console.log('prompt:', prompt);
+            console.log('style:', style);
+
+            const jsonData = {
+                image: imageData,
+                prompt: prompt,
+                style: style
+            };
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(jsonData)
+                });
+
+                const data = await response.json();
+                console.log('Ответ от сервера:', data);
+
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    console.error('Ошибка генерации:', data.error);
+                    alert('Ошибка генерации: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                console.error('Ошибка запроса:', error);
+                alert('Ошибка связи с сервером');
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
